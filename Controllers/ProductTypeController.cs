@@ -81,19 +81,19 @@ namespace Beauty_Works.Controllers
         [Route("{productTypeID:int}")]
         public async Task<IActionResult> GetProductTypeByID([FromRoute] int productTypeID)
         {
-            var existingProductType = await productTypeRepository.GetByID(productTypeID);
+            var productType = await productTypeRepository.GetByID(productTypeID);
 
-            if (existingProductType == null)
+            if (productType == null)
             {
                 return NotFound();
             }
 
             var response = new ProductTypeDto
             {
-                ID = existingProductType.ID,
-                Name = existingProductType.Name,
-                CategoryID = existingProductType.CategoryID,
-                CategoryName = existingProductType.Category?.Name
+                ID = productType.ID,
+                Name = productType.Name,
+                CategoryID = productType.CategoryID,
+                CategoryName = productType.Category?.Name
             };
 
             return Ok(response);

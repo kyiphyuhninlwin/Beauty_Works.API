@@ -1,6 +1,5 @@
 ﻿using Beauty_Works.Models.Domain;
 using Microsoft.EntityFrameworkCore;
-using ProductType = Beauty_Works.Models.Domain.ProductType;
 
 namespace Beauty_Works.Data
 {
@@ -18,4 +17,5 @@ namespace Beauty_Works.Data
         public DbSet<ProductType> ProductTypes { get; set; }
         public DbSet<Variant> Variants { get; set; }
     }
+
 }

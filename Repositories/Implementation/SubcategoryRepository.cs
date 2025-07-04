@@ -48,6 +48,13 @@ namespace Beauty_Works.Repositories.Implementation
             return await dbContext.Subcategories.Include(s => s.ProductType).FirstOrDefaultAsync(s => s.ID == subcategoryID);
         }
 
+        public async Task<bool?> GetHasVariantAsync(int subcategoryID)
+        {
+            return await dbContext.Subcategories.Where(s => s.ID == subcategoryID)
+                .Select(s => s.HasVariant)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<Subcategory?> UpdateAsync(Subcategory subcategory)
         {
             var existingSubcategory = await dbContext.Subcategories.Include(s => s.ProductType).FirstOrDefaultAsync(s => s.ID == subcategory.ID);

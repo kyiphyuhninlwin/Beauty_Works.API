@@ -38,6 +38,7 @@ namespace Beauty_Works.Controllers
             var subcategory = new Subcategory
             {
                 Name = request.Name,
+                HasVariant = request.HasVariant,
                 ProductTypeID = request.ProductTypeID,
                 ProductType = productType
             };
@@ -48,6 +49,7 @@ namespace Beauty_Works.Controllers
             {
                 ID = subcategory.ID,
                 Name = subcategory.Name,
+                HasVariant = subcategory.HasVariant,
                 ProductTypeID = subcategory.ProductTypeID,
                 ProductTypeName = subcategory.ProductType?.Name
             };
@@ -67,6 +69,7 @@ namespace Beauty_Works.Controllers
                 {
                     ID = subcategory.ID,
                     Name = subcategory.Name,
+                    HasVariant = subcategory.HasVariant,
                     ProductTypeID = subcategory.ProductTypeID,
                     ProductTypeName = subcategory.ProductType?.Name
                 });
@@ -90,6 +93,7 @@ namespace Beauty_Works.Controllers
             {
                 ID = subcategory.ID,
                 Name = subcategory.Name,
+                HasVariant = subcategory.HasVariant,
                 ProductTypeID = subcategory.ProductTypeID,
                 ProductTypeName = subcategory.ProductType?.Name
             };
@@ -118,6 +122,7 @@ namespace Beauty_Works.Controllers
             {
                 ID = subcategoryID,
                 Name = request.Name,
+                HasVariant = request.HasVariant,
                 ProductTypeID = request.ProductTypeID
             };
 
@@ -132,6 +137,7 @@ namespace Beauty_Works.Controllers
             {
                 ID = subcategory.ID,
                 Name = subcategory.Name,
+                HasVariant = subcategory.HasVariant,
                 ProductTypeID = subcategory.ProductTypeID,
                 ProductTypeName = subcategory.ProductType?.Name
             };
@@ -154,6 +160,7 @@ namespace Beauty_Works.Controllers
             {
                 ID = subcategory.ID,
                 Name = subcategory.Name,
+                HasVariant = subcategory.HasVariant,
                 ProductTypeID = subcategory.ProductTypeID,
                 ProductTypeName = subcategory.ProductType?.Name
             };

@@ -33,6 +33,7 @@ namespace Beauty_Works.Controllers
             // Map Domain to Dto
             var response = new BrandDto
             {
+                ID = brand.ID,
                 Name = brand.Name
             };
 

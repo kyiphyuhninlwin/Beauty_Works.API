@@ -23,6 +23,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IStatusRepository, StatusRepository>();
 builder.Services.AddScoped<IProductTypeRepository, ProductTypeRepository>();
 builder.Services.AddScoped<ISubcategoryRepository, SubcategoryRepository>();
+builder.Services.AddScoped<IVariantRepository, VariantRepository>();
 
 builder.Services.AddCors(options =>
 {

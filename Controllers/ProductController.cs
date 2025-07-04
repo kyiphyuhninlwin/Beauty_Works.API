@@ -1,5 +1,6 @@
 ﻿using Beauty_Works.Models.Domain;
 using Beauty_Works.Models.DTO.Product;
+using Beauty_Works.Models.DTO.Variant;
 using Beauty_Works.Repositories.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,31 +15,85 @@ namespace Beauty_Works.Controllers
         private readonly ISubcategoryRepository subcategoryRepository;
         private readonly IStatusRepository statusRepository;
         private readonly IBrandRepository brandRepository;
+        private readonly IVariantRepository variantRepository;
 
         public ProductController(IProductRepository productRepository, ISubcategoryRepository subcategoryRepository,
-            IStatusRepository statusRepository, IBrandRepository brandRepository)
+            IStatusRepository statusRepository, IBrandRepository brandRepository, IVariantRepository variantRepository)
         {
             this.productRepository = productRepository;
             this.subcategoryRepository = subcategoryRepository;
             this.statusRepository = statusRepository;
             this.brandRepository = brandRepository;
+            this.variantRepository = variantRepository;
         }
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequestDto request)
         {
-            if ((request.SubcategoryID == null) || (request.StatusID == null) || (request.BrandID == null))
+            if(request.OrderID == null)
             {
-                return BadRequest("Subcategory ID or Status ID or Brand ID is required.");
+                return BadRequest("Order ID is required.");
             }
 
+            if (request.SubcategoryID == null)
+            {
+                return BadRequest("Subcategory ID is required.");
+            }
+
+            if (request.StatusID == null)
+            {
+                return BadRequest("Status ID is required.");
+            }
+
+            if (request.BrandID == null)
+            {
+                return BadRequest("Brand ID is required.");
+            }
+
+            var orderID = await productRepository.GetByOrderIdAsync(request.OrderID.Value);
             var subcategory = await subcategoryRepository.GetByID(request.SubcategoryID.Value);
             var status = await statusRepository.GetByID(request.StatusID.Value);
             var brand = await brandRepository.GetByID(request.BrandID.Value);
+
+            if (orderID != null)
+            {
+                return BadRequest($"OrderID {request.OrderID} is already taken.");
+            }
+
+            // check hasvariant
+            var hasVariant = await subcategoryRepository.GetHasVariantAsync(request.SubcategoryID.Value);
+            if (hasVariant == null)
+            {
+                return NotFound($"Subcategory with ID {request.SubcategoryID} not found.");
+            }
+
+            var variants = new List<Variant>();
+            if (hasVariant == true)
+            {
+                if (request.Variants == null || !request.Variants.Any())
+                {
+                    return BadRequest("At least one variant is required for this product.");
+                }
+
+                foreach (var variantId in request.Variants)
+                {
+                    var variant = await variantRepository.GetByID(variantId);
+                    if (variant == null)
+                    {
+                        return NotFound($"Variant with ID {variantId} not found.");
+                    }
+                    variants.Add(variant);
+                }
+            }
+            else
+            {
+                variants = new List<Variant>();
+            }
 
             // Convert Dto to Domain
             var product = new Product
             {
                 Name = request.Name,
+                OrderID = request.OrderID,
                 Price = request.Price,
                 Quantity = request.Quantity,
                 Desp = request.Desp,
@@ -49,7 +104,8 @@ namespace Beauty_Works.Controllers
                 StatusID = request.StatusID,
                 Status = status,
                 BrandID = request.BrandID,
-                Brand = brand
+                Brand = brand,
+                Variants = variants,
             };
 
             product = await productRepository.CreateAsync(product);
@@ -58,6 +114,7 @@ namespace Beauty_Works.Controllers
             var response = new ProductDto
             {
                 ID = product.ID,
+                OrderID = product.OrderID,
                 Name = product.Name,
                 Price = product.Price,
                 Quantity = product.Quantity,
@@ -69,7 +126,14 @@ namespace Beauty_Works.Controllers
                 StatusID = product.StatusID,
                 StatusName = product.Status?.Name,
                 BrandID = product.BrandID,
-                BrandName = product.Brand?.Name
+                BrandName = product.Brand?.Name,
+                Variants = product.Variants!
+                            .Select(v => new VariantDto
+                            {
+                                ID = v.ID,
+                                Name = v.Name,
+                            })
+                            .ToList()
             };
 
             return Ok(response);
@@ -77,9 +141,10 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts([FromQuery] int? subcategoryID, [FromQuery] int? brandID, [FromQuery] int? statusID, 
+            [FromQuery] string? sortBy, [FromQuery] string? sortDirection, [FromQuery] int? pageNumber, [FromQuery] int? pageSize)
         {
-            var products = await productRepository.GetAllAsync();
+            var products = await productRepository.GetAllAsync(subcategoryID, brandID, statusID, sortBy, sortDirection, pageNumber, pageSize);
 
             // Convert Domain to Dto
             var response = new List<ProductDto>();
@@ -88,6 +153,7 @@ namespace Beauty_Works.Controllers
                 response.Add(new ProductDto
                 {
                     ID = product.ID,
+                    OrderID = product.OrderID,
                     Name = product.Name,
                     Price = product.Price,
                     Quantity = product.Quantity,
@@ -99,7 +165,14 @@ namespace Beauty_Works.Controllers
                     StatusID = product.StatusID,
                     StatusName = product.Status?.Name,
                     BrandID = product.BrandID,
-                    BrandName = product.Brand?.Name
+                    BrandName = product.Brand?.Name,
+                    Variants = product.Variants!
+                                .Select(v => new VariantDto
+                                {
+                                    ID = v.ID,
+                                    Name = v.Name,
+                                })
+                                .ToList()
                 });
             }
 
@@ -110,8 +183,8 @@ namespace Beauty_Works.Controllers
         [Route("{productID:int}")]
         public async Task<IActionResult> GetProductByID([FromRoute] int productID)
         {
-            var existingProduct = await productRepository.GetByIdAsync(productID);
-            if (existingProduct == null)
+            var product = await productRepository.GetByIdAsync(productID);
+            if (product == null)
             {
                 return NotFound();
             }
@@ -119,19 +192,66 @@ namespace Beauty_Works.Controllers
             //Map Domain to Dto
             var response = new ProductDto
             {
-                ID = existingProduct.ID,
-                Name = existingProduct.Name,
-                Price = existingProduct.Price,
-                Quantity = existingProduct.Quantity,
-                Desp = existingProduct.Desp,
-                PublishedDate = existingProduct.PublishedDate,
-                ExpiredDate = existingProduct.ExpiredDate,
-                SubcategoryID = existingProduct.SubcategoryID,
-                SubcategoryName = existingProduct.Subcategory?.Name,
-                StatusID = existingProduct.StatusID,
-                StatusName = existingProduct.Status?.Name,
-                BrandID = existingProduct.BrandID,
-                BrandName = existingProduct.Brand?.Name
+                ID = product.ID,
+                OrderID = product.OrderID,
+                Name = product.Name,
+                Price = product.Price,
+                Quantity = product.Quantity,
+                Desp = product.Desp,
+                PublishedDate = product.PublishedDate,
+                ExpiredDate = product.ExpiredDate,
+                SubcategoryID = product.SubcategoryID,
+                SubcategoryName = product.Subcategory?.Name,
+                StatusID = product.StatusID,
+                StatusName = product.Status?.Name,
+                BrandID = product.BrandID,
+                BrandName = product.Brand?.Name,
+                Variants = product.Variants!
+                            .Select(v => new VariantDto
+                            {
+                                ID = v.ID,
+                                Name = v.Name,
+                            })
+                            .ToList()
+            };
+
+            return Ok(response);
+        }
+
+        [HttpGet]
+        [Route("display/{orderID:int}")]
+        public async Task<IActionResult> GetProductByOrderID([FromRoute] int orderID)
+        {
+            var product = await productRepository.GetByOrderIdAsync(orderID);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            //Map Domain to Dto
+            var response = new ProductDto
+            {
+                ID = product.ID,
+                OrderID = product.OrderID,
+                Name = product.Name,
+                Price = product.Price,
+                Quantity = product.Quantity,
+                Desp = product.Desp,
+                PublishedDate = product.PublishedDate,
+                ExpiredDate = product.ExpiredDate,
+                SubcategoryID = product.SubcategoryID,
+                SubcategoryName = product.Subcategory?.Name,
+                StatusID = product.StatusID,
+                StatusName = product.Status?.Name,
+                BrandID = product.BrandID,
+                BrandName = product.Brand?.Name,
+                Variants = product.Variants!
+                            .Select(v => new VariantDto
+                            {
+                                ID = v.ID,
+                                Name = v.Name,
+                            })
+                            .ToList()
             };
 
             return Ok(response);
@@ -141,24 +261,90 @@ namespace Beauty_Works.Controllers
         [Route("{productID:int}")]
         public async Task<IActionResult> UpdateProduct([FromRoute] int productID, UpdateProductRequestDto request)
         {
-            if ((request.SubcategoryID == null) || (request.StatusID == null) || (request.BrandID == null))
+            var existingProduct = await productRepository.GetByIdAsync(productID);
+
+            if (existingProduct == null)
             {
-                return BadRequest("Subcategory ID or Status ID or Brand ID is required.");
+                return NotFound($"Product with ID {productID} not found.");
             }
 
+            if (request.OrderID == null)
+            {
+                return BadRequest("Order ID is required.");
+            }
+
+            if (request.SubcategoryID == null)
+            {
+                return BadRequest("Subcategory ID is required.");
+            }
+
+            if (request.StatusID == null)
+            {
+                return BadRequest("Status ID is required.");
+            }
+
+            if (request.BrandID == null)
+            {
+                return BadRequest("Brand ID is required.");
+            }
+
+            if (request.OrderID != null)
+            {
+                var checkOrderID = await productRepository.GetByOrderIdAsync(request.OrderID.Value);
+                if (checkOrderID != null && checkOrderID.ID != productID)
+                {
+                    return BadRequest($"OrderID {request.OrderID} is already taken.");
+                }
+            }
+            
             var subcategory = await subcategoryRepository.GetByID(request.SubcategoryID.Value);
             var status = await statusRepository.GetByID(request.StatusID.Value);
             var brand = await brandRepository.GetByID(request.BrandID.Value);
 
-            if ((subcategory == null) || (status == null) || (brand == null))
+            if (subcategory == null)
             {
-                return NotFound("Subcategory or status or brand not found.");
+                return NotFound($"Subcategory with ID {request.SubcategoryID} not found.");
+            }
+
+            if (status == null)
+            {
+                return NotFound($"Status with ID {request.StatusID} not found.");
+            }
+
+            if (brand == null)
+            {
+                return NotFound($"Brand with ID {request.BrandID} not found.");
+            }
+
+            var hasVariant = await subcategoryRepository.GetHasVariantAsync(request.SubcategoryID.Value);
+            if (hasVariant == null)
+            {
+                return NotFound($"Subcategory with ID {request.SubcategoryID} not found.");
+            }
+
+            var variants = new List<Variant>();
+            if (hasVariant == true)
+            {
+                if (request.Variants == null || !request.Variants.Any())
+                {
+                    return BadRequest("At least one variant is required for this product.");
+                }
+
+                foreach (var variantId in request.Variants)
+                {
+                    var variant = await variantRepository.GetByID(variantId);
+                    if (variant == null)
+                        return NotFound($"Variant with ID {variantId} not found.");
+
+                    variants.Add(variant);
+                }
             }
 
             // Convert Dto to Domain
             var product = new Product
             {
                 ID = productID,
+                OrderID = request.OrderID,
                 Name = request.Name,
                 Price = request.Price,
                 Quantity = request.Quantity,
@@ -167,7 +353,8 @@ namespace Beauty_Works.Controllers
                 ExpiredDate = request.ExpiredDate,
                 SubcategoryID = request.SubcategoryID,
                 StatusID = request.StatusID,
-                BrandID = request.BrandID
+                BrandID = request.BrandID,
+                Variants = variants
             };
 
             var updatedProduct = await productRepository.UpdateAsync(product);
@@ -181,6 +368,7 @@ namespace Beauty_Works.Controllers
             var response = new ProductDto
             {
                 ID = updatedProduct.ID,
+                OrderID = updatedProduct.OrderID,
                 Name = updatedProduct.Name,
                 Price = updatedProduct.Price,
                 Quantity = updatedProduct.Quantity,
@@ -192,7 +380,14 @@ namespace Beauty_Works.Controllers
                 StatusID = updatedProduct.StatusID,
                 StatusName = updatedProduct.Status?.Name,
                 BrandID = updatedProduct.BrandID,
-                BrandName = updatedProduct.Brand?.Name
+                BrandName = updatedProduct.Brand?.Name,
+                Variants = updatedProduct.Variants!
+                            .Select(v => new VariantDto
+                            {
+                                ID = v.ID,
+                                Name = v.Name,
+                            })
+                            .ToList()
             };
 
             return Ok(response);
@@ -213,6 +408,7 @@ namespace Beauty_Works.Controllers
             var response = new ProductDto
             {
                 ID = deletedProduct.ID,
+                OrderID = deletedProduct.OrderID,
                 Name = deletedProduct.Name,
                 Price = deletedProduct.Price,
                 Quantity = deletedProduct.Quantity,

@@ -4,6 +4,7 @@ using Beauty_Works.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Beauty_Works.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250702061739_FixProductType")]
+    partial class FixProductType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,25 +57,6 @@ namespace Beauty_Works.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("Beauty_Works.Models.Domain.Image", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Url")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("Image");
-                });
-
             modelBuilder.Entity("Beauty_Works.Models.Domain.Product", b =>
                 {
                     b.Property<int>("ID")
@@ -89,9 +73,6 @@ namespace Beauty_Works.Migrations
 
                     b.Property<DateTime?>("ExpiredDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("ImageID")
-                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -118,8 +99,6 @@ namespace Beauty_Works.Migrations
 
                     b.HasIndex("BrandID");
 
-                    b.HasIndex("ImageID");
-
                     b.HasIndex("StatusID");
 
                     b.HasIndex("SubcategoryID");
@@ -145,7 +124,7 @@ namespace Beauty_Works.Migrations
 
                     b.HasIndex("CategoryID");
 
-                    b.ToTable("ProductTypes");
+                    b.ToTable("Types", (string)null);
                 });
 
             modelBuilder.Entity("Beauty_Works.Models.Domain.Status", b =>
@@ -225,10 +204,6 @@ namespace Beauty_Works.Migrations
                         .WithMany()
                         .HasForeignKey("BrandID");
 
-                    b.HasOne("Beauty_Works.Models.Domain.Image", "Image")
-                        .WithMany("Products")
-                        .HasForeignKey("ImageID");
-
                     b.HasOne("Beauty_Works.Models.Domain.Status", "Status")
                         .WithMany()
                         .HasForeignKey("StatusID");
@@ -238,8 +213,6 @@ namespace Beauty_Works.Migrations
                         .HasForeignKey("SubcategoryID");
 
                     b.Navigation("Brand");
-
-                    b.Navigation("Image");
 
                     b.Navigation("Status");
 
@@ -282,11 +255,6 @@ namespace Beauty_Works.Migrations
             modelBuilder.Entity("Beauty_Works.Models.Domain.Category", b =>
                 {
                     b.Navigation("ProductTypes");
-                });
-
-            modelBuilder.Entity("Beauty_Works.Models.Domain.Image", b =>
-                {
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Beauty_Works.Models.Domain.ProductType", b =>
