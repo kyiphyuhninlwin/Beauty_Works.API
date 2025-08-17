@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Beauty_Works.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250704104721_AddImageModel")]
-    partial class AddImageModel
+    [Migration("20250710112113_RedoImageModel")]
+    partial class RedoImageModel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -121,7 +121,9 @@ namespace Beauty_Works.Migrations
 
                     b.HasIndex("BrandID");
 
-                    b.HasIndex("ImageID");
+                    b.HasIndex("ImageID")
+                        .IsUnique()
+                        .HasFilter("[ImageID] IS NOT NULL");
 
                     b.HasIndex("StatusID");
 
@@ -229,8 +231,8 @@ namespace Beauty_Works.Migrations
                         .HasForeignKey("BrandID");
 
                     b.HasOne("Beauty_Works.Models.Domain.Image", "Image")
-                        .WithMany("Products")
-                        .HasForeignKey("ImageID");
+                        .WithOne("Product")
+                        .HasForeignKey("Beauty_Works.Models.Domain.Product", "ImageID");
 
                     b.HasOne("Beauty_Works.Models.Domain.Status", "Status")
                         .WithMany()
@@ -289,7 +291,7 @@ namespace Beauty_Works.Migrations
 
             modelBuilder.Entity("Beauty_Works.Models.Domain.Image", b =>
                 {
-                    b.Navigation("Products");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Beauty_Works.Models.Domain.ProductType", b =>

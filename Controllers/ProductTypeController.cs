@@ -58,9 +58,10 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProductTypes()
+        public async Task<IActionResult> GetAllProductTypes([FromQuery] string? sortBy, [FromQuery] string? sortDirection, 
+            [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var productTypes = await productTypeRepository.GetAllAsync();
+            var productTypes = await productTypeRepository.GetAllAsync(sortBy, sortDirection, pageNumber, pageSize);
 
             var response = new List<ProductTypeDto>();
             foreach(var productType in productTypes)

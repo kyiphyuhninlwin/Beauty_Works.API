@@ -16,6 +16,7 @@ namespace Beauty_Works.Data
         public DbSet<Subcategory> Subcategories { get; set; }
         public DbSet<ProductType> ProductTypes { get; set; }
         public DbSet<Variant> Variants { get; set; }
+        public DbSet<Image> Images { get; set; }
     }
 
 }

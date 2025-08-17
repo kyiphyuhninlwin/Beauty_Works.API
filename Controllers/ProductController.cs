@@ -49,6 +49,11 @@ namespace Beauty_Works.Controllers
                 return BadRequest("Brand ID is required.");
             }
 
+            if (request.ImageID == null)
+            {
+                return BadRequest("Image ID is required.");
+            }
+
             var orderID = await productRepository.GetByOrderIdAsync(request.OrderID.Value);
             var subcategory = await subcategoryRepository.GetByID(request.SubcategoryID.Value);
             var status = await statusRepository.GetByID(request.StatusID.Value);
@@ -141,10 +146,12 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts([FromQuery] int? subcategoryID, [FromQuery] int? brandID, [FromQuery] int? statusID, 
-            [FromQuery] string? sortBy, [FromQuery] string? sortDirection, [FromQuery] int? pageNumber, [FromQuery] int? pageSize)
+        public async Task<IActionResult> GetAllProducts([FromQuery] int? subcategoryID, [FromQuery] int? brandID, [FromQuery] int? statusID,
+                                                        [FromQuery] int? productTypeID, [FromQuery] string? query,
+                                                        [FromQuery] string? sortBy, [FromQuery] string? sortDirection,
+                                                        [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var products = await productRepository.GetAllAsync(subcategoryID, brandID, statusID, sortBy, sortDirection, pageNumber, pageSize);
+            var products = await productRepository.GetAllAsync(subcategoryID, brandID, statusID, productTypeID, sortBy, sortDirection, query, pageNumber, pageSize);
 
             // Convert Domain to Dto
             var response = new List<ProductDto>();
@@ -166,13 +173,15 @@ namespace Beauty_Works.Controllers
                     StatusName = product.Status?.Name,
                     BrandID = product.BrandID,
                     BrandName = product.Brand?.Name,
-                    Variants = product.Variants!
-                                .Select(v => new VariantDto
+                    ImageID = product.ImageID,
+                    ImageName = product.Image?.Name,
+                    Variants = product.Variants != null
+                                ? product.Variants.Select(v => new VariantDto
                                 {
                                     ID = v.ID,
                                     Name = v.Name,
                                 })
-                                .ToList()
+                                .ToList() : new List<VariantDto>()
                 });
             }
 
@@ -206,6 +215,8 @@ namespace Beauty_Works.Controllers
                 StatusName = product.Status?.Name,
                 BrandID = product.BrandID,
                 BrandName = product.Brand?.Name,
+                ImageID = product.ImageID,
+                ImageName = product.Image?.Name,
                 Variants = product.Variants!
                             .Select(v => new VariantDto
                             {
@@ -245,6 +256,8 @@ namespace Beauty_Works.Controllers
                 StatusName = product.Status?.Name,
                 BrandID = product.BrandID,
                 BrandName = product.Brand?.Name,
+                ImageID = product.ImageID,
+                ImageName = product.Image?.Name,
                 Variants = product.Variants!
                             .Select(v => new VariantDto
                             {
@@ -354,6 +367,7 @@ namespace Beauty_Works.Controllers
                 SubcategoryID = request.SubcategoryID,
                 StatusID = request.StatusID,
                 BrandID = request.BrandID,
+                ImageID = request.ImageID,
                 Variants = variants
             };
 
@@ -381,6 +395,8 @@ namespace Beauty_Works.Controllers
                 StatusName = updatedProduct.Status?.Name,
                 BrandID = updatedProduct.BrandID,
                 BrandName = updatedProduct.Brand?.Name,
+                ImageID = updatedProduct.ImageID,
+                ImageName = updatedProduct.Image?.Name,
                 Variants = updatedProduct.Variants!
                             .Select(v => new VariantDto
                             {
@@ -420,10 +436,27 @@ namespace Beauty_Works.Controllers
                 StatusID = deletedProduct.StatusID,
                 StatusName = deletedProduct.Status?.Name,
                 BrandID = deletedProduct.BrandID,
-                BrandName = deletedProduct.Brand?.Name
+                BrandName = deletedProduct.Brand?.Name,
+                ImageID = deletedProduct.ImageID,
+                ImageName = deletedProduct.Image?.Name,
+                Variants = deletedProduct.Variants!
+                            .Select(v => new VariantDto
+                            {
+                                ID = v.ID,
+                                Name = v.Name,
+                            })
+                            .ToList()
             };
 
             return Ok(response);
         }
+
+        [HttpPost("assign-image")]
+        public async Task<IActionResult> AssignImageToProduct(int productId, int imageId)
+        {
+            await productRepository.AssignImageToProductAsync(productId, imageId);
+            return Ok("Image assigned to product.");
+        }
+
     }
 }

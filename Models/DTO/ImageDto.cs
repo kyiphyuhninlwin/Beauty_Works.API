@@ -1,6 +1,6 @@
-﻿namespace Beauty_Works.Models.Domain
+﻿namespace Beauty_Works.Models.DTO
 {
-    public class Image
+    public class ImageDto
     {
         public int ID { get; set; }
         public string? Name { get; set; }
@@ -8,6 +8,7 @@
         public string? Title { get; set; }
         public string? Url { get; set; }
         public DateTime? DateCreated { get; set; } = DateTime.UtcNow;
-        public Product? Product { get; set; }
+        public int? ProductID { get; set; }
+        public string? ProductName { get; set; }
     }
 }

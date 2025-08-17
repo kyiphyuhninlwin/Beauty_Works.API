@@ -38,9 +38,35 @@ namespace Beauty_Works.Repositories.Implementation
             }
         }
 
-        public async Task<IEnumerable<Brand>> GetAllAsync()
+        public async Task<IEnumerable<Brand>> GetAllAsync(string? sortBy, string? sortDirection, int? pageNumber = 1, int? pageSize = 10)
         {
-            return await dbContext.Brands.ToListAsync();
+            var brands = dbContext.Brands.AsQueryable();
+
+            // sorting
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                bool isAsc = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+
+                switch (sortBy.ToLower())
+                {
+                    case "name":
+                        brands = isAsc
+                                ? brands.OrderBy(x => x.Name == null ? "" : x.Name.ToLower())
+                                : brands.OrderByDescending(x => x.Name == null ? "" : x.Name.ToLower());
+
+                        break;
+                }
+            }
+
+            // Pagination
+            // Page Number 1, Page size 5 => skip 0, take 5
+            // Page Number 2, Page size 5 => skip 5, take 5 [6,7,8,9,10]
+            // Page Number 3, Page size 5 => skip 10, take 5
+
+            var skipResults = (pageNumber - 1) * pageSize;
+            brands = brands.Skip(skipResults ?? 0).Take(pageSize ?? 10);
+
+            return await brands.ToListAsync();
         }
 
         public async Task<Brand?> GetByID(int brandID)

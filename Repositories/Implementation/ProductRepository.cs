@@ -2,6 +2,9 @@
 using Beauty_Works.Models.Domain;
 using Beauty_Works.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Beauty_Works.Repositories.Implementation
 {
@@ -15,6 +18,19 @@ namespace Beauty_Works.Repositories.Implementation
         {
             this.dbContext = dbContext;
         }
+
+        public async Task<Product?> AssignImageToProductAsync(int productID, int imageID)
+        {
+            var product = await dbContext.Products.FindAsync(productID);
+            if (product != null)
+            {
+                product.ImageID = imageID;
+                await dbContext.SaveChangesAsync();
+            }
+
+            return product;
+        }
+
         public async Task<Product> CreateAsync(Product product)
         {
             await dbContext.Products.AddAsync(product);
@@ -25,7 +41,7 @@ namespace Beauty_Works.Repositories.Implementation
         public async Task<Product?> DeleteAsync(int productID)
         {
             var product = await dbContext.Products.Include(sc => sc.Subcategory).Include(s=> s.Status)
-                .Include(b=> b.Brand).Include(v => v.Variants).FirstOrDefaultAsync(p => p.ID == productID);
+                .Include(b=> b.Brand).Include(v => v.Variants).Include(i => i.Image).FirstOrDefaultAsync(p => p.ID == productID);
 
             if(product != null)
             {
@@ -39,18 +55,12 @@ namespace Beauty_Works.Repositories.Implementation
             }
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync()
-        {
-            return await dbContext.Products.OrderBy(p => p.OrderID)
-                .Include(sc => sc.Subcategory).Include(s => s.Status)
-                .Include(b => b.Brand).Include(v => v.Variants).ToListAsync();
-        }
-
-        public async Task<IEnumerable<Product>> GetAllAsync(int? subcategoryID, int? brandID, int? statusID, 
-            string? sortBy, string? sortDirection, int? pageNumber = 1, int? pageSize = 100)
+        public async Task<IEnumerable<Product>> GetAllAsync(int? subcategoryID, int? brandID, int? statusID, int? productTypeID, 
+            string? sortBy, string? sortDirection, string? query = null, int? pageNumber = 1, int? pageSize = 10)
         {
             // query
-            var products = dbContext.Products.Include(p => p.Subcategory).Include(p => p.Brand).Include(p => p.Status).AsQueryable();
+            var products = dbContext.Products.Include(p => p.Subcategory).Include(p => p.Brand).Include(p => p.Status)
+                .Include(p => p.Variants).Include(p => p.Image).AsQueryable();
 
             if (subcategoryID.HasValue)
             {
@@ -67,6 +77,18 @@ namespace Beauty_Works.Repositories.Implementation
                 products = products.Where(p => p.StatusID == statusID.Value);
             }
 
+            if(productTypeID.HasValue)
+            {
+                products = products.Where(p => p.Subcategory != null && p.Subcategory.ProductTypeID == productTypeID.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                products = products.Where(p =>
+                                        (!string.IsNullOrEmpty(p.Name) && p.Name.Contains(query)) ||
+                                        (p.Brand != null && !string.IsNullOrEmpty(p.Brand.Name) && p.Brand.Name.Contains(query)));
+            }
+
             // sorting
             if (!string.IsNullOrWhiteSpace(sortBy))
             {
@@ -80,9 +102,9 @@ namespace Beauty_Works.Repositories.Implementation
                     case "price":
                         products = isAsc ? products.OrderBy(p => p.Price) : products.OrderByDescending(p => p.Price);
                         break;
-                    //case "orderid":
-                    //    products = isAsc ? products.OrderBy(p => p.OrderID) : products.OrderByDescending(p => p.OrderID);
-                    //    break;
+                    case "brand":
+                        products = isAsc ? products.OrderBy(p => p.Brand!.Name) : products.OrderByDescending(p => p.Brand!.Name);
+                        break;
                 }
             }
 
@@ -93,20 +115,20 @@ namespace Beauty_Works.Repositories.Implementation
 
             var skipResults = (pageNumber - 1) * pageSize;
             products = products.Skip(skipResults ?? 0).Take(pageSize ?? 100);
-
+            
             return await products.ToListAsync();
         }
 
         public async Task<Product?> GetByIdAsync(int productID)
         {
             return await dbContext.Products.Include(sc => sc.Subcategory).Include(s => s.Status)
-                .Include(b => b.Brand).Include(v => v.Variants).FirstOrDefaultAsync(p => p.ID == productID);
+                .Include(b => b.Brand).Include(v => v.Variants).Include(i => i.Image).FirstOrDefaultAsync(p => p.ID == productID);
         }
 
         public async Task<Product?> GetByOrderIdAsync(int orderID)
         {
             return await dbContext.Products.Include(sc => sc.Subcategory).Include(s => s.Status)
-                .Include(b => b.Brand).Include(v => v.Variants).FirstOrDefaultAsync(p => p.OrderID == orderID);
+                .Include(b => b.Brand).Include(v => v.Variants).Include(i => i.Image).FirstOrDefaultAsync(p => p.OrderID == orderID);
         }
 
         public async Task<int> GetProductsTotal()
@@ -117,7 +139,7 @@ namespace Beauty_Works.Repositories.Implementation
         public async Task<Product?> UpdateAsync(Product product)
         {
             var existingProduct = await dbContext.Products.Include(sc => sc.Subcategory).Include(s => s.Status)
-                .Include(b => b.Brand).Include(v => v.Variants).FirstOrDefaultAsync(p => p.ID == product.ID);
+                .Include(b => b.Brand).Include(v => v.Variants).Include(i => i.Image).FirstOrDefaultAsync(p => p.ID == product.ID);
 
             if (existingProduct != null)
             {

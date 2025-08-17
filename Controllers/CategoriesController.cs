@@ -42,9 +42,10 @@ namespace Beauty_Works.Controllers
 
         // Get : /api/categories
         [HttpGet]
-        public async Task<IActionResult> GetAllCategories()
+        public async Task<IActionResult> GetAllCategories([FromQuery] string? sortBy, [FromQuery] string? sortDirection, 
+            [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var categories = await categoryRepository.GetAllAsync();
+            var categories = await categoryRepository.GetAllAsync(sortBy, sortDirection, pageNumber, pageSize);
 
             // Map Domain to Dto
             var response = new List<CategoryDto>();

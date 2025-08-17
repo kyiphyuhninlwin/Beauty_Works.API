@@ -39,9 +39,10 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllVariant()
+        public async Task<IActionResult> GetAllVariant([FromQuery] string? sortBy, [FromQuery] string? sortDirection, 
+            [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var variants = await variantRepo.GetAllAsync();
+            var variants = await variantRepo.GetAllAsync(sortBy, sortDirection, pageNumber, pageSize);
 
             // Map Domain to Dto
             var response = new List<VariantDto>();

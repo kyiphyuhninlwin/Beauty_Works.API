@@ -5,6 +5,7 @@ using Beauty_Works.Repositories.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace Beauty_Works.Controllers
 {
@@ -41,9 +42,10 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBrands()
+        public async Task<IActionResult> GetAllBrands([FromQuery] string? sortBy, [FromQuery] string? sortDirection, 
+            [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var brands = await brandRepository.GetAllAsync();
+            var brands = await brandRepository.GetAllAsync(sortBy, sortDirection, pageNumber, pageSize);
 
             // Map Domain to Dto
             var response = new List<BrandDto>();

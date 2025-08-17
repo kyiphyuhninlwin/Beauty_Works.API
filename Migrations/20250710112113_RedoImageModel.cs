@@ -5,31 +5,31 @@
 namespace Beauty_Works.Migrations
 {
     /// <inheritdoc />
-    public partial class AddImageModel : Migration
+    public partial class RedoImageModel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Subcategories_Types_ProductTypeID",
-                table: "Subcategories");
+            //migrationBuilder.DropForeignKey(
+            //    name: "FK_Subcategories_Types_ProductTypeID",
+            //    table: "Subcategories");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Types_Categories_CategoryID",
-                table: "Types");
+            //migrationBuilder.DropForeignKey(
+            //    name: "FK_Types_Categories_CategoryID",
+            //    table: "Types");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Types",
-                table: "Types");
+            //migrationBuilder.DropPrimaryKey(
+            //    name: "PK_Types",
+            //    table: "Types");
 
-            migrationBuilder.RenameTable(
-                name: "Types",
-                newName: "ProductTypes");
+            //migrationBuilder.RenameTable(
+            //    name: "Types",
+            //    newName: "ProductTypes");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_Types_CategoryID",
-                table: "ProductTypes",
-                newName: "IX_ProductTypes_CategoryID");
+            //migrationBuilder.RenameIndex(
+            //    name: "IX_Types_CategoryID",
+            //    table: "ProductTypes",
+            //    newName: "IX_ProductTypes_CategoryID");
 
             migrationBuilder.AddColumn<int>(
                 name: "ImageID",
@@ -37,10 +37,10 @@ namespace Beauty_Works.Migrations
                 type: "int",
                 nullable: true);
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_ProductTypes",
-                table: "ProductTypes",
-                column: "ID");
+            //migrationBuilder.AddPrimaryKey(
+            //    name: "PK_ProductTypes",
+            //    table: "ProductTypes",
+            //    column: "ID");
 
             migrationBuilder.CreateTable(
                 name: "Image",
@@ -59,7 +59,9 @@ namespace Beauty_Works.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Products_ImageID",
                 table: "Products",
-                column: "ImageID");
+                column: "ImageID",
+                unique: true,
+                filter: "[ImageID] IS NOT NULL");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Products_Image_ImageID",
@@ -68,19 +70,19 @@ namespace Beauty_Works.Migrations
                 principalTable: "Image",
                 principalColumn: "ID");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_ProductTypes_Categories_CategoryID",
-                table: "ProductTypes",
-                column: "CategoryID",
-                principalTable: "Categories",
-                principalColumn: "ID");
+            //migrationBuilder.AddForeignKey(
+            //    name: "FK_ProductTypes_Categories_CategoryID",
+            //    table: "ProductTypes",
+            //    column: "CategoryID",
+            //    principalTable: "Categories",
+            //    principalColumn: "ID");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Subcategories_ProductTypes_ProductTypeID",
-                table: "Subcategories",
-                column: "ProductTypeID",
-                principalTable: "ProductTypes",
-                principalColumn: "ID");
+            //migrationBuilder.AddForeignKey(
+            //    name: "FK_Subcategories_ProductTypes_ProductTypeID",
+            //    table: "Subcategories",
+            //    column: "ProductTypeID",
+            //    principalTable: "ProductTypes",
+            //    principalColumn: "ID");
         }
 
         /// <inheritdoc />

@@ -12,6 +12,7 @@
         public int? SubcategoryID { get; set; }
         public int? StatusID { get; set; }
         public int? BrandID { get; set; }
+        public int? ImageID { get; set; }
         public int[]? Variants { get; set; }
     }
 }

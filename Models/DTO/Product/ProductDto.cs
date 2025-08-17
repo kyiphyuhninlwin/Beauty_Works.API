@@ -18,6 +18,8 @@ namespace Beauty_Works.Models.DTO.Product
         public string? StatusName { get; set; }
         public int? BrandID { get; set; }
         public string? BrandName { get; set; }
+        public int? ImageID { get; set; }
+        public string? ImageName { get; set; }
         public List<VariantDto> Variants { get; set; } = new List<VariantDto>();
     }
 }

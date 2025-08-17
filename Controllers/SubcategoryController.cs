@@ -58,9 +58,10 @@ namespace Beauty_Works.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllSubcategories()
+        public async Task<IActionResult> GetAllSubcategories([FromQuery] string? sortBy, [FromQuery] string? sortDirection, 
+            [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10)
         {
-            var subcategories = await subcategoryRepository.GetAllAsync();
+            var subcategories = await subcategoryRepository.GetAllAsync(sortBy, sortDirection, pageNumber, pageSize);
 
             var response = new List<SubcategoryDto>();
             foreach (var subcategory in subcategories)
